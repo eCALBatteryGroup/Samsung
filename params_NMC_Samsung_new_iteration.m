@@ -197,8 +197,8 @@ p.a_s_p = 3*p.epsilon_s_p/p.R_s_p;  % Positive electrode [m^2/m^3]
  
 %% Transport Params
 % Diffusion coefficient in solid
-% p.D_s_n = 1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
-% p.D_s_p = 2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
+p.D_s_n = 9.9945e-13;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
+p.D_s_p = 1.0000e-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
  
 % Diffusion coefficient in electrolyte
 p.D_e = 1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
@@ -228,7 +228,7 @@ p.alph = 0.5;         % Charge transfer coefficients
 p.R_SEI = 0;%3.391e-3;   % Resistivity of SEI layer, [Ohms*m^2]
 p.R_f_n = 15.00E-03; %p.R_SEI;    % Resistivity of SEI layer, [Ohms*m^2]
 p.R_f_p = 10.00E-03; %0;          % Resistivity of SEI layer, [Ohms*m^2]
-%p.R_c = 7.00E-04; %0;          % Contact Resistance/Current Collector Resistance, [Ohms]
+p.R_c = 4.0000e-06;%7.00E-04; %0;          % Contact Resistance/Current Collector Resistance, [Ohms]
 
   
 % Reaction rates
