@@ -37,7 +37,6 @@ for k = 1:NT
 %     ylim([min(min(phi_s_n)) max(max(phi_s_n))])
     ylabel('$$c_{ss,n}(x,t)$$','interpreter','latex','FontSize',fs)
 %     ylabel('$$\phi_{s,n}$$','interpreter','latex')
-    xlabel('Space across cell, x [node no.]','interpreter','latex','FontSize',fs)
     set(gca,'FontSize', fs)
     
     subplot(3,3,3)
@@ -49,7 +48,7 @@ for k = 1:NT
 %     ylim([min(min(phi_s_p)) max(max(phi_s_p))])
     ylabel('$$c_{ss,p}(x,t)$$','interpreter','latex','FontSize',fs)
 %     ylabel('$$\phi_{s,p}$$','interpreter','latex')
-    xlabel('Space across cell, x [node no.]','interpreter','latex','FontSize',fs)
+    xlabel('Space | x [node ]','interpreter','latex','FontSize',fs)
     set(gca,'FontSize', fs)
     
     jall = [jn(:,k); zeros(p.Nxs-1,1); jp(:,k)];
@@ -65,7 +64,6 @@ for k = 1:NT
     xlim([1 Nx])
 %     ylim([min(min(i_en)), max(max(i_en))])
     ylabel('$$i_{e,n}(x,t)$$','interpreter','latex','FontSize',fs)
-    xlabel('Space across cell, x [node no.]','interpreter','latex','FontSize',fs)
     set(gca,'FontSize', fs)
 
 %     subplot(3,3,6)
@@ -85,7 +83,6 @@ for k = 1:NT
 %     ylabel('$$\phi_e$$','interpreter','latex')
     ylim([min(min(c_ex)), max(max(c_ex))])
 %     ylim([min(min(phi_e)), max(max(phi_e))])
-    xlabel('Space across cell, x [node no.]','interpreter','latex','FontSize',fs)
     set(gca,'FontSize', fs)
 
     pause(0.1);

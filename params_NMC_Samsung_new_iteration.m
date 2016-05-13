@@ -180,16 +180,19 @@ p.L_s = 2E-5;% <--FROM Samsung %2.50E-05; %1.697e-5;     % Thickness of separato
 p.L_p = 11.9E-5;% <--FROM Samsung %3.66E-05; %6.521e-5;     % Thickness of positive electrode [m]
  
 % Particle Radii
-p.R_s_n = 5e-7;%1e-7;%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
-p.R_s_p = 5e-7;%1e-7;%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
+p.R_s_n = 6.1708e-07;%5e-7;%1e-7;%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
+p.R_s_p = 5.0000e-07;%5e-7;%1e-7;%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
  
 % Volume fractions
 p.epsilon_s_n = 0.7215;%0.662; %0.3810;   % Volume fraction in solid for neg. electrode
 p.epsilon_s_p = 0.6516;%0.58; %0.4800;   % Volume fraction in solid for pos. electrode
  
-p.epsilon_e_n = 0.3; %0.6190;   % Volume fraction in electrolyte for neg. electrode
+p.epsilon_f_n = 0.0789;%0;%Filler
+p.epsilon_f_p = 0.0998;%0;%Filler
+
+p.epsilon_e_n = 1 - p.epsilon_s_n - p.epsilon_f_n;%0.3; %0.6190;   % Volume fraction in electrolyte for neg. electrode
 p.epsilon_e_s = 0.4; %0.3041;   % Volume fraction in electrolyte for separator
-p.epsilon_e_p = 0.3; %0.5200;   % Volume fraction in electrolyte for pos. electrode
+p.epsilon_e_p = 1 - p.epsilon_s_p - p.epsilon_f_p; %0.5200;   % Volume fraction in electrolyte for pos. electrode
  
 % Specific interfacial surface area
 p.a_s_n = 3*p.epsilon_s_n/p.R_s_n;  % Negative electrode [m^2/m^3]
@@ -197,11 +200,13 @@ p.a_s_p = 3*p.epsilon_s_p/p.R_s_p;  % Positive electrode [m^2/m^3]
  
 %% Transport Params
 % Diffusion coefficient in solid
-p.D_s_n = 9.9945e-13;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
-p.D_s_p = 1.0000e-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
+p.D_s_n = 8.8565e-13;%9.9945e-13;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
+p.D_s_p = 6.6027e-12;%1.0000e-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
+%p.D_s_n = 1.40E-14;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
+%p.D_s_p = 2.00E-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
  
 % Diffusion coefficient in electrolyte
-p.D_e = 1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
+p.D_e = 2.0864e-10;%1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
  
 p.brug = 1.5; %1.452;       % Bruggeman porosity
 p.D_e_n = p.D_e * p.epsilon_e_n^p.brug; % Effective diffusion coef. in neg. electrode, [m^2/s]
@@ -218,7 +223,7 @@ p.sig_eff_p = p.sig_p * p.epsilon_s_p;    % Eff. conductivity in pos. electrode,
 % Conductivity of electrolyte
  
 % Miscellaneous
-p.t_plus = 0.38; %0.2495;    % Transference number
+ p.t_plus = 0.3662;%0.38; %0.2495;    % Transference number
 p.Faraday = 96487;    % Faraday's constant, [Coulumbs/mol]
 p.Area = 0.048965;%0.046;%<-- This is calculated from Samsung electrode geometry %1.02E-01; %0.3108;      % Electrode current collector area [m^2]
  
@@ -228,8 +233,8 @@ p.alph = 0.5;         % Charge transfer coefficients
 p.R_SEI = 0;%3.391e-3;   % Resistivity of SEI layer, [Ohms*m^2]
 p.R_f_n = 15.00E-03; %p.R_SEI;    % Resistivity of SEI layer, [Ohms*m^2]
 p.R_f_p = 10.00E-03; %0;          % Resistivity of SEI layer, [Ohms*m^2]
-p.R_c = 4.0000e-06;%7.00E-04; %0;          % Contact Resistance/Current Collector Resistance, [Ohms]
-
+p.R_c = 5.1874e-05;%4.0000e-06;%7.00E-04; %0;          % Contact Resistance/Current Collector Resistance, [Ohms]
+%p.R_c = 7.00E-04;
   
 % Reaction rates
 p.k_n = 1e-7; % Reaction rate in neg. electrode, [(A/cm^2)*(mol^3/mol)^(1+alpha)]
@@ -281,9 +286,9 @@ p.PadeOrder = 3;
 % p.delta_r_p = p.R_s_p / p.Nr;
  
 % Finite difference points along x-coordinate
-p.Nxn = 10;
-p.Nxs = 10;
-p.Nxp = 10;
+p.Nxn = 70;%10;
+p.Nxs = 35;%10;
+p.Nxp = 70;%10;
 p.Nx = p.Nxn+p.Nxs+p.Nxp;
  
 p.delta_x_n = 1 / p.Nxn;

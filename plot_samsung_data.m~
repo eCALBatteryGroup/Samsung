@@ -1,0 +1,15 @@
+%% Plot Experimental Data collected for Samsung
+%   Created May 12, 2016 by Scott Moura
+
+close all;
+
+figure(1); clf;
+
+
+
+%load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
+load('data/Int_Obs/IC_Pulse')
+%load('data/Int_Obs/dfn_5c')
+
+subplot(3,2,1)
+plot(

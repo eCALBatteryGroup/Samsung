@@ -30,9 +30,9 @@ run params_NMC_Samsung_new_iteration
 
 
 
-load('data/Int_Obs/IC_Pulse')
+% load('data/Int_Obs/IC_Pulse')
 %load('data/Int_Obs/dfn_5c')
-
+load('data/Int_Obs/1C_data_Oct_26_2015_05_sample')
 
 
 
@@ -387,8 +387,8 @@ for k = 1:(NT-1)
 %     T_dot(k) = (p.h*(p.T_amp - Tbatt(k)) - I(k)*volt_exp(k) - Q_in(k)) / (p.rho_avg*p.C_p);
 %     Tbatt(k+1) = Tbatt(k) + T_dot(k)*p.delta_t;
     
-%     fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.4fV\n',...
-%         t(k),I(k+1)/OneC,SOC(k+1),Volt(k+1));
+    fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.3fV | Iters : %2.0f\n',...
+        t(k),I(k+1)/OneC*p.Area,SOC(k+1),Volt(k+1),stats.iters);
     
     if(Volt(k+1) < p.volt_min)
         fprintf(1,'Min Voltage of %1.1fV exceeded\n',p.volt_min);

@@ -1,4 +1,4 @@
-%% Reference Potential for Pos. Electrode: Unref(theta_n)
+%% Reference Potential for Pos. Electrode: Upref(theta_p)
 %   Created July 12, 2011 by Scott Moura
 
 function [Uref,varargout] = refPotentialCathode(p,theta)
