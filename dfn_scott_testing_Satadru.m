@@ -32,8 +32,8 @@ run params_NMC_Samsung_new_iteration
 
 % load('data/Int_Obs/IC_Pulse')
 %load('data/Int_Obs/dfn_5c')
-load('data/Int_Obs/1C_data_Oct_26_2015_05_sample')
-
+% load('data/Int_Obs/1C_data_Oct_26_2015_05_sample')
+load('data/Int_Obs/Samsung_HEV_data')
 
 
 %load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_001sec');
@@ -135,7 +135,7 @@ NT = length(t);
 
 %% Initial Conditions & Preallocation
 % Solid concentration
-V0 = 3.6673;% for 1C Pulse, for UDDS 3.9322;%4.1985;% for 1C, for UDDS 3.9322;
+V0 = 3.747556; %3.6673; for 1C Pulse, for UDDS 3.9322;%4.1985;% for 1C, for UDDS 3.9322;
 [csn0,csp0] = init_cs(p,V0);
 
 c_s_n0 = zeros(p.PadeOrder,1);
