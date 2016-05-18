@@ -43,7 +43,7 @@ options.Display		    = 'off';
 %Problem
 problem	= struct;
 problem.fitnessfcn	= @DFN_error_new;
-problem.nvars		= 3;
+problem.nvars		= 4;
 problem.Aineq		= [];
 problem.bineq		= [];
 % problem.lb			= [0.5E+02 0.5E+01 0.1300];% 1.00E-04];% 0.1600];
@@ -51,11 +51,11 @@ problem.bineq		= [];
 %%%problem.lb			= [5E-04 1E-14 1E-14];% 1.00E-04];% 0.1600];
 %%%problem.ub			= [20E-03  1E-12 1E-12];% 10.00E-04];% 0.1700];
 
-problem.lb			      = [4E-07    9e-13    1E-15];    % Upper bound changed by HEP
-problem.ub			      = [4E-06     1E-11    2E-14];    % Lower bound changed by HEP
+problem.lb			      = [1.00E-10 0.35 0 0];    % Upper bound changed by HEP
+problem.ub			      = [9.00E-10 0.48 0.1 0.1];    % Lower bound changed by HEP
 
 %options.PopInitBest		  = [7.00E-04 1.40E-14 2E-14];      % Initial Personal Best (After Initial Run)
-options.PopInitBest		  = [4e-06 9.9945e-13 1.0000e-14];      % Initial Personal Best (After Initial Run)
+options.PopInitBest		  = [5.34E-10 0.38 0 0];      % Initial Personal Best (After Initial Run)
 
 
 bounds.range        = problem.ub-problem.lb;                       % Range 

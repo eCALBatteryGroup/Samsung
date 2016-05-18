@@ -87,9 +87,13 @@ c_ep = c_e(Nn+p.Nxs : end);
 c_ex = [c_e_bcs(1); c_en; c_e_bcs(2); c_es; c_e_bcs(3); c_ep; c_e_bcs(4)];
 
 % Compute Electrolyte Diffusion Coefficient and Derivative
-[D_en,dD_en] = electrolyteDe(c_en);
-[D_es,dD_es] = electrolyteDe(c_es);
-[D_ep,dD_ep] = electrolyteDe(c_ep);
+% [D_en,dD_en] = electrolyteDe(c_en);
+% [D_es,dD_es] = electrolyteDe(c_es);
+% [D_ep,dD_ep] = electrolyteDe(c_ep);
+
+[D_en,dD_en] = electrolyteDe(c_en,p);
+[D_es,dD_es] = electrolyteDe(c_es,p);
+[D_ep,dD_ep] = electrolyteDe(c_ep,p);
 
 % System Matrices have all been precomputed & stored in param struct "p"
 

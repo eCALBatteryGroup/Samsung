@@ -14,7 +14,8 @@ beta_s = (1 - p.t_plus) / (p.epsilon_e_s * p.Faraday * 2 * p.L_s * p.delta_x_s);
 beta_p = (1 - p.t_plus) / (p.epsilon_e_p * p.Faraday * 2 * p.L_p * p.delta_x_p);
 
 %% Electrolyte Diffusion
-De = electrolyteDe(c_ex);
+% De = electrolyteDe(c_ex);
+De = electrolyteDe(c_ex,p);
 
 De0 = De(1);
 De_n = De(2:p.Nxn);

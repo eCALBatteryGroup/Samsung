@@ -29,10 +29,14 @@ run params_NMC_Samsung_new_iteration
 
 
 
+%load('data/Int_Obs/IC_Pulse')
 
-% load('data/Int_Obs/IC_Pulse')
+%load('data/Int_Obs/Cby2Pulse')
+
+load('data/Int_Obs/Samsung_HEV_data')
+
 %load('data/Int_Obs/dfn_5c')
-load('data/Int_Obs/1C_data_Oct_26_2015_05_sample')
+
 
 
 
@@ -78,7 +82,7 @@ Nz = 3*Nnp + Nx;
 OneC = 2.08;%<-- This is Ah for Samsug cell, NOT Ah/m^2, %2.590706610839782; %[Ah/m^2]
 
 %% Constant Current Data %%
-p.delta_t = 0.5;
+p.delta_t = 0.05;
 %t = 0:p.delta_t:(72);
 %t = 0:p.delta_t:1800;
 %%I(mod(t,20) < 10) = 350; %350, 10C Discharge for LiFePO4 Cell @ 35Ah/m^2 for 1C
@@ -135,7 +139,8 @@ NT = length(t);
 
 %% Initial Conditions & Preallocation
 % Solid concentration
-V0 = 3.6673;% for 1C Pulse, for UDDS 3.9322;%4.1985;% for 1C, for UDDS 3.9322;
+%V0 = 3.9322;%3.6659;%5C pulse, 3.6663;% for 1C Pulse, for UDDS 3.9322;%4.1985;% for 1C, for UDDS 3.9322;
+V0 = 3.7476;
 [csn0,csp0] = init_cs(p,V0);
 
 c_s_n0 = zeros(p.PadeOrder,1);
@@ -387,8 +392,8 @@ for k = 1:(NT-1)
 %     T_dot(k) = (p.h*(p.T_amp - Tbatt(k)) - I(k)*volt_exp(k) - Q_in(k)) / (p.rho_avg*p.C_p);
 %     Tbatt(k+1) = Tbatt(k) + T_dot(k)*p.delta_t;
     
-    fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.3fV | Iters : %2.0f\n',...
-        t(k),I(k+1)/OneC*p.Area,SOC(k+1),Volt(k+1),stats.iters);
+%     fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.4fV\n',...
+%         t(k),I(k+1)/OneC,SOC(k+1),Volt(k+1));
     
     if(Volt(k+1) < p.volt_min)
         fprintf(1,'Min Voltage of %1.1fV exceeded\n',p.volt_min);
@@ -491,7 +496,7 @@ legend('DFN Model Data','Experimental Data')
 xlabel('Time [s]')
 ylabel('Voltage [V]')
 %ylim([3.56 3.76])
-ylim([3.1 4.1])
+ylim([3.25 4.1])
 % 
 % 
 figure(2)

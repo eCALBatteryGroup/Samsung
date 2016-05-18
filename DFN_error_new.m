@@ -27,12 +27,22 @@ function f = DFN_error(x)
 %    -20*exp(-0.2*sqrt((1/n).*sum(x.^2,2))) ...
 %    -exp((1/n).*sum(cos(2*pi*x),2));
 disp('=================Parameters=================')
-p.R_c = x(1); %100;    % Conductivity of solid in neg. electrode, [1/Ohms*m]
-p.D_s_n = x(2); %100;    % Conductivity of solid in pos. electrode, [1/Ohms*m]
-p.D_s_p = x(3) % Resistivity of SEI layer, [Ohms*m^2]
-% p.R_f_p = x(4)%30.00E-03; %0;          % Resistivity of SEI layer, [Ohms*m^2]
-% p.R_s_n = x(5);%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
-% p.R_s_p = x(6);%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
+% p.R_c = x(1); %100;    % Conductivity of solid in neg. electrode, [1/Ohms*m]
+% p.D_s_n = x(2); %100;    % Conductivity of solid in pos. electrode, [1/Ohms*m]
+% p.D_s_p = x(3); % Resistivity of SEI layer, [Ohms*m^2]
+% % p.R_f_p = x(4)%30.00E-03; %0;          % Resistivity of SEI layer, [Ohms*m^2]
+% p.R_s_n = x(4);%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
+% p.R_s_p = x(5)%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
+
+
+
+p.D_e = x(1);%1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
+
+p.t_plus = x(2);%0.38; %0.2495;    % Transference number
+
+p.epsilon_f_n = x(3);%0;%Filler
+
+p.epsilon_f_p = x(4)%0;%Filler
 
 %disp('=================Check=================')
 % 
@@ -55,7 +65,12 @@ p.D_s_p = x(3) % Resistivity of SEI layer, [Ohms*m^2]
 try
     run dfn_scott_testing_Satadru
 catch
-    load('data/Int_Obs/IC_Pulse')
+    %load('data/Int_Obs/IC_Pulse')
+    %load('data/Int_Obs/Cby2Pulse')
+    %load('data/Int_Obs/Samsung_HEV_data')
+    
+    load('data/Int_Obs/dfn_5c')
+
 disp('===Catch===')
    %load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
     out.volt = 1.5*volt_exp;
@@ -65,7 +80,12 @@ end
 
 %load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
 
-load('data/Int_Obs/IC_Pulse')
+%load('data/Int_Obs/IC_Pulse')
+%load('data/Int_Obs/Cby2Pulse')
+%load('data/Int_Obs/Samsung_HEV_data')
+
+load('data/Int_Obs/dfn_5c')
+
 
 
 % size1 = size(out.volt);
