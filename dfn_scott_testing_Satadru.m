@@ -17,7 +17,7 @@ tic;
 % run params_FePO4_ACC15
 
 run params_NMC_Samsung_new_iteration
-
+%run params_NMC_Samsung_new_iteration_after_test_2
 %p.sig_n = ddd(i);
 % p.D_s_n = ddd(i); %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
 % p.D_s_p = 2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
@@ -33,7 +33,7 @@ run params_NMC_Samsung_new_iteration
 
 %load('data/Int_Obs/Cby2Pulse')
 
-load('data/Int_Obs/Samsung_HEV_data')
+load('data/Int_Obs/Samsung_EV_data')
 
 % load('data/Int_Obs/1C_data_Oct_26_2015_05_sample')
 
@@ -139,7 +139,7 @@ NT = length(t);
 % Solid concentration
 
 %V0 = 3.9322;%3.6659;%5C pulse, 3.6663;% for 1C Pulse, for UDDS 3.9322;%4.1985;% for 1C, for UDDS 3.9322;
-V0 = 3.7476;
+V0 = 3.8290; %3.8288 for NEDC, || 3.8290 for EV || 3.7476 for HEV;
 
 [csn0,csp0] = init_cs(p,V0);
 
