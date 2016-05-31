@@ -14,7 +14,7 @@ Nn = p.Nxn - 1;
 Np = p.Nxp - 1;
 Nnp = Nn+Np;
 Nx = p.Nx - 3;
-Nz = 3*Nnp + Nx;
+Nz = 3*Nnp + Nx + 2;
 
 ind_csn = 1:Ncsn;
 ind_csp = Ncsn+1:Ncsn+Ncsp;
@@ -28,10 +28,10 @@ ind_phi_s_p = Nn+1:Nnp;
 ind_ien = Nnp+1:Nnp+Nn;
 ind_iep = Nnp+Nn+1:2*Nnp;
 
-ind_phi_e = 2*Nnp+1 : 2*Nnp+Nx;
+ind_phi_e = 2*Nnp+1 : 2*Nnp+Nx+2;
 
-ind_jn = 2*Nnp+Nx+1 : 2*Nnp+Nx+Nn;
-ind_jp = 2*Nnp+Nx+Nn+1 : Nz;
+ind_jn = 2*Nnp+Nx+3 : 2*Nnp+Nx+2+Nn;
+ind_jp = 2*Nnp+Nx+3+Nn : Nz;
 
 %% Preallocate Jacobian
 f_x = zeros(Nc+1);
@@ -75,6 +75,23 @@ g_z(ind_iep,ind_iep) = p.F1_iep;
 
 g_z(ind_ien,ind_jn) = p.F2_ien;
 g_z(ind_iep,ind_jp) = p.F2_iep;
+
+%% Butler-Volmer Equation
+Cell_df6n = cell(Nn,1);
+Cell_df6p = cell(Np,1);
+for idx = 1:Nn
+    Cell_df6n{idx} = p.C_csn(1,:);
+end
+for idx = 1:Np
+    Cell_df6p{idx} = p.C_csp(1,:);
+end
+
+rsn = ones(Nn,1);
+rsp = ones(Np,1);
+csn = p.PadeOrder * ones(1,Nn);
+csp = p.PadeOrder * ones(1,Np);
+g_x(ind_jn,ind_csn) = blkdiagFast(rsn, csn, Cell_df6n{:});
+g_x(ind_jp,ind_csp) = blkdiagFast(rsp, csp, Cell_df6p{:});
 
 %%
 f_x = sparse(f_x);

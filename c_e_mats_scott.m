@@ -64,18 +64,18 @@ N1(1,2) = -1;
 N2(1,1) = -3;
 
 % BC2
-N1(2,p.Nxn-2) = p.epsilon_e_n/(2*Del_xn);
-N1(2,p.Nxn-1) = -4*p.epsilon_e_n/(2*Del_xn);
-N2(2,2) = (3*p.epsilon_e_n)/(2*Del_xn) + (3*p.epsilon_e_s)/(2*Del_xs);
-N1(2,p.Nxn) = -4*p.epsilon_e_s/(2*Del_xs);
-N1(2,p.Nxn+1) = p.epsilon_e_s/(2*Del_xs);
+N1(2,p.Nxn-2) = (p.epsilon_e_n^p.brug)/(2*Del_xn);
+N1(2,p.Nxn-1) = (-4*p.epsilon_e_n^p.brug)/(2*Del_xn);
+N2(2,2) = (3*p.epsilon_e_n^p.brug)/(2*Del_xn) + (3*p.epsilon_e_s^p.brug)/(2*Del_xs);
+N1(2,p.Nxn) = (-4*p.epsilon_e_s^p.brug)/(2*Del_xs);
+N1(2,p.Nxn+1) = (p.epsilon_e_s^p.brug)/(2*Del_xs);
 
 % BC3
-N1(3,p.Nxn+p.Nxs-3) = p.epsilon_e_s/(2*Del_xs);
-N1(3,p.Nxn+p.Nxs-2) = -4*p.epsilon_e_s/(2*Del_xs);
-N2(3,3) = (3*p.epsilon_e_s)/(2*Del_xs) + (3*p.epsilon_e_p)/(2*Del_xp);
-N1(3,p.Nxn+p.Nxs-1) = -4*p.epsilon_e_p/(2*Del_xp);
-N1(3,p.Nxn+p.Nxs) = p.epsilon_e_p/(2*Del_xp);
+N1(3,p.Nxn+p.Nxs-3) = (p.epsilon_e_s^p.brug)/(2*Del_xs);
+N1(3,p.Nxn+p.Nxs-2) = (-4*p.epsilon_e_s^p.brug)/(2*Del_xs);
+N2(3,3) = (3*p.epsilon_e_s^p.brug)/(2*Del_xs) + (3*p.epsilon_e_p^p.brug)/(2*Del_xp);
+N1(3,p.Nxn+p.Nxs-1) = (-4*p.epsilon_e_p^p.brug)/(2*Del_xp);
+N1(3,p.Nxn+p.Nxs) = (p.epsilon_e_p^p.brug)/(2*Del_xp);
 
 
 % BC4

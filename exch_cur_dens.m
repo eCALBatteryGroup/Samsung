@@ -3,9 +3,12 @@
 
 function [i_0n,i_0p] = exch_cur_dens(p,c_ss_n,c_ss_p,c_e)
 
+Nn = p.Nxn - 1;
+Np = p.Nxp - 1;
+
 % Parse out concentrations in anode and cathode
-c_e_n = c_e(1:p.Nxn-1);
-c_e_p = c_e(p.Nxn+p.Nxs-1:end);
+c_e_n = c_e(1:Nn);
+c_e_p = c_e(end-Np+1:end);
 
 % Compute exchange current density
 i_0n = p.k_n * ((p.c_s_n_max - c_ss_n) .* c_ss_n .* c_e_n).^p.alph;

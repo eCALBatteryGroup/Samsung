@@ -12,9 +12,9 @@ f = nan*ones(maxiters,1);
 tol = 1e-5;
 
 % Initial Guesses
-x_low = 0.3 * p.c_s_p_max;
+x_low = 0.2 * p.c_s_p_max;
 x_high = 1.0 * p.c_s_p_max;
-x(1) = 0.5 * p.c_s_p_max;
+x(1) = 0.6 * p.c_s_p_max;
 
 % Iterate Bisection Algorithm
 for idx = 1:maxiters
@@ -22,8 +22,8 @@ for idx = 1:maxiters
     theta_p = x(idx)/p.c_s_p_max;
     theta_n = (p.n_Li_s-p.epsilon_s_p*p.L_p*p.Area*x(idx))/(p.c_s_n_max*p.epsilon_s_n*p.L_n*p.Area);
 
-    OCPn = refPotentialAnode(p,theta_n);
-    OCPp = refPotentialCathode(p,theta_p);
+    OCPn = refPotentialAnode_NCM20Q(p,theta_n);
+    OCPp = refPotentialCathode_NCM20Q(p,theta_p);
 
     f(idx) = OCPp - OCPn - V;
         
