@@ -11,10 +11,11 @@ Ncsp = p.PadeOrder * (p.Nxp-1);
 Nce = p.Nx - 3;
 Nc = Ncsn+Ncsp+Nce;
 Nn = p.Nxn - 1;
+Ns = p.Nxs - 1;
 Np = p.Nxp - 1;
 Nnp = Nn+Np;
 Nx = p.Nx - 3;
-Nz = 3*Nnp + Nx;
+Nz = 3*Nnp + Nx + 2;
 
 ind_csn = 1:Ncsn;
 ind_csp = Ncsn+1:Ncsn+Ncsp;
@@ -28,10 +29,10 @@ ind_phi_s_p = Nn+1:Nnp;
 ind_ien = Nnp+1:Nnp+Nn;
 ind_iep = Nnp+Nn+1:2*Nnp;
 
-ind_phi_e = 2*Nnp+1 : 2*Nnp+Nx;
+ind_phi_e = 2*Nnp+1 : 2*Nnp+Nx+2;
 
-ind_jn = 2*Nnp+Nx+1 : 2*Nnp+Nx+Nn;
-ind_jp = 2*Nnp+Nx+Nn+1 : Nz;
+ind_jn = 2*Nnp+Nx+3 : 2*Nnp+Nx+2+Nn;
+ind_jp = 2*Nnp+Nx+2+Nn+1 : Nz;
 
 % Solid Concentration
 c_s_n = x(1:Ncsn);
@@ -46,6 +47,10 @@ c_e = x(ind_ce);
 c_en = c_e(1:Nn);
 c_es = c_e(Nn+1:Nn+p.Nxs-1);
 c_ep = c_e(end-Np+1:end);
+
+% c_e across entire sandwich
+c_e_bcs = p.ce.C*c_e;
+c_ex = [c_e_bcs(1); c_en; c_e_bcs(2); c_es; c_e_bcs(3); c_ep; c_e_bcs(4)];
 
 % Solid Potential
 phi_s_n = z(ind_phi_s_n);
@@ -70,42 +75,61 @@ B1 = zeros(Nc+1,1);
 B2 = zeros(Nz,1);
 
 %% Li Diffusion in Electrolyte Phase: c_e(x,t)
-% c_e across entire sandwich
-c_e_bcs = p.ce.C*c_e;
-c_ex = [c_e_bcs(1); c_en; c_e_bcs(2); c_es; c_e_bcs(3); c_ep; c_e_bcs(4)];
+% I'm going to ignore dependence of D_e on c_e in these Jacobians...
 
-% System matrices
-[A_ce, B_ce, trash_var] = c_e_mats_federico(p,c_ex);
+% Compute Electrolyte Diffusion Coefficient and Derivative
+[D_en] = electrolyteDe_NCM(c_en,p);
+[D_es] = electrolyteDe_NCM(c_es,p);
+[D_ep] = electrolyteDe_NCM(c_ep,p);
 
-f_x(ind_ce,ind_ce) = A_ce;
-f_z(ind_ce(1:Nn),ind_ien) = B_ce(1:Nn,2:Nn+1);
-f_z(ind_ce(end-Np+1:end),ind_iep) = B_ce(end-Np+1:end, end-Np:end-1);
+% ADD BRUGGEMAN RELATION % Apr.22 2016 by Saehong Park
+D_en_eff = D_en .* p.epsilon_e_n.^(p.brug-1);
+D_es_eff = D_es .* p.epsilon_e_s.^(p.brug-1);
+D_ep_eff = D_ep .* p.epsilon_e_p.^(p.brug-1);
 
-if(nargout > 4)
-    diexdI = [0; zeros(Nn,1); ones(p.Nxs+1,1); zeros(Np,1); 0];
-    B1(ind_ce) = B_ce * diexdI;
-end
+rM1 = [Nn; Ns; Np];
+cM1 = rM1';
+M1 = sparse(blkdiagFast(rM1, cM1, p.ce.M3n, p.ce.M3s, p.ce.M3p));
+M2 = [p.ce.M4n, zeros(p.Nxn-1,2); ...
+      zeros(p.Nxs-1,1), p.ce.M4s, zeros(p.Nxs-1,1);...
+      zeros(p.Nxp-1,2), p.ce.M4p];
+G = M1 + M2*p.ce.C;
+
+D_e_eff = sparse(diag([D_en_eff; D_es_eff; D_ep_eff]));
+
+dcedce = D_e_eff * G;
+
+% Save Jacobians
+f_x(ind_ce,ind_ce) = dcedce;
+
+f_z(ind_ce(1:Nn),ind_jn) = p.ce.M5n;
+f_z(ind_ce(Nn+Ns+1:end),ind_jp) = p.ce.M5p;
+
+% if(nargout > 4)
+%     diexdI = [0; zeros(Nn,1); ones(p.Nxs+1,1); zeros(Np,1); 0];
+%     B1(ind_ce) = B_ce * diexdI;
+% end
 
 %% Temperature: T(t)
-% Bulk concentration
-c_avg_n = zeros(Nn,1);
-c_avg_p = zeros(Np,1);
-
 % Loop through each "comb tooth" in anode
-for idx = 1:Nn
-    y_csn = p.C_csn * c_s_n_mat(:,idx);
-    c_avg_n(idx) = y_csn(2);
-end
+y_csn = p.C_csn * c_s_n_mat;
+c_avg_n = y_csn(2,:)';
+% for idx = 1:Nn
+%     y_csn = p.C_csn * c_s_n_mat(:,idx);
+%     c_avg_n(idx) = y_csn(2);
+% end
 
 % Loop through each "comb tooth" in cathode
-for idx = 1:Np
-    y_csp = p.C_csp * c_s_p_mat(:,idx);
-    c_avg_p(idx) = y_csp(2);
-end
+y_csp = p.C_csp * c_s_p_mat;
+c_avg_p = y_csp(2,:)';
+% for idx = 1:Np
+%     y_csp = p.C_csp * c_s_p_mat(:,idx);
+%     c_avg_p(idx) = y_csp(2);
+% end
 
 % Equilibrium Potential and Gradient wrt bulk concentration
-[Unb,dUnb] = refPotentialAnode(p, c_avg_n / p.c_s_n_max);
-[Upb,dUpb] = refPotentialCathode(p, c_avg_p / p.c_s_p_max);
+[Unb,dUnb] = refPotentialAnode_NCM20Q(p, c_avg_n / p.c_s_n_max);
+[Upb,dUpb] = refPotentialCathode_NCM20Q(p, c_avg_p / p.c_s_p_max);
 
 % Derivatives wrt c_s
 dfTdcsn_int = -(p.a_s_n*p.Faraday * jn .* dUnb) / (p.rho_avg*p.C_p);
@@ -152,13 +176,57 @@ if(nargout > 4)
     B2(ind_iep) = p.F3_iep;
 end
 
-%% Potential in Electrolyte Phase: phi_e(x,t)
-% System matrices
-[F1_pe,F2_pe,F3_pe] = phi_e_mats(p,c_ex);
+%% Potential in Electrolyte Phase: phi_e(x,t)... i am going to ignore variations of c_e w.r.t. kappa
+% % System matrices
+% [F1_pe,F2_pe,F3_pe] = phi_e_mats_new(p,c_ex);
 
+% Electrolyte Conductivity
+kappa = electrolyteCond(c_ex);
+
+kappa0 = kappa(1);                              % BC1
+kappa_n = kappa(2:p.Nxn);
+kappa_ns = kappa(p.Nxn+1);
+kappa_s = kappa(p.Nxn+2 : p.Nxn+2+p.Nxs-2);
+kappa_sp = kappa(p.Nxn+2+p.Nxs-1);
+kappa_p = kappa(p.Nxn+2+p.Nxs : end-1);
+kappaN = kappa(end);                            % BC2
+
+% Effective conductivity - multiply by p.epsilon_e_x ^ (p.brug) % Apr.22 by Saehong Park
+kappa_eff0 = kappa0 .* p.epsilon_e_n.^(p.brug);
+kappa_eff_n = kappa_n .* p.epsilon_e_n.^(p.brug);
+
+kappa_eff_ns = kappa_ns .* ((p.epsilon_e_n + p.epsilon_e_s)/2).^(p.brug);
+
+kappa_eff_s = kappa_s .* p.epsilon_e_s.^(p.brug);
+
+kappa_eff_sp = kappa_sp .* ((p.epsilon_e_s + p.epsilon_e_p)/2).^(p.brug);
+
+kappa_eff_p = kappa_p .* p.epsilon_e_p.^(p.brug);
+kappa_effN = kappaN .* p.epsilon_e_p.^(p.brug);
+
+% Form into vector
+kappa_eff = [kappa_eff_n; kappa_eff_ns; kappa_eff_s; kappa_eff_sp; kappa_eff_p];
+Kap_eff = sparse(diag(kappa_eff));
+
+% Diffusional Conductivity
+bet = (2*p.R*p.T_amp)/(p.Faraday) * (p.t_plus - 1) * (1 + p.dactivity);
+
+% Modified effective conductivity
+Kap_eff_D = bet*Kap_eff;
+
+% Form Matrices
+M2_pe = p.M2_pe;
+M2_pe(1,1) = M2_pe(1,1) * kappa_eff0;
+M2_pe(end,end) = M2_pe(end,end) * kappa_effN;
+
+F1_pe = Kap_eff*p.M1_pe + M2_pe*p.C_pe;
+F2_pe = p.M3_pe;
+F3_pe = Kap_eff_D*p.M4_pe;
+
+% Save Jacobians
 g_z(ind_phi_e,ind_phi_e) = F1_pe;
 
-dpedie = F2_pe(:,[2:Nn+1, end-Np:end-1]);
+dpedie = F2_pe(:,[1:Nn, (end-Np+1):end]);
 g_z(ind_phi_e, [ind_ien, ind_iep]) = dpedie;
 
 % Derivatives w.r.t. c_e here
@@ -166,8 +234,14 @@ pe_ce_on_n = [diag(ones(Nn,1)), zeros(Nn, p.Nxs-1+Np)];
 pe_ce_on_s = [zeros(p.Nxs-1, Nn), diag(ones(p.Nxs-1,1)), zeros(p.Nxs-1, Np)];
 pe_ce_on_p = [zeros(Np, p.Nxs-1+Nn), diag(ones(Np,1))];
 
-F3_pe_bcs = [p.ce.C(1,:); pe_ce_on_n ;p.ce.C(2,:); pe_ce_on_s; p.ce.C(3,:); pe_ce_on_p; p.ce.C(4,:)];
-g_x(ind_phi_e,ind_ce) = F3_pe * F3_pe_bcs * diag(1./c_e);
+F3_pe_bcs = [p.ce.C(1,:); pe_ce_on_n; p.ce.C(2,:); pe_ce_on_s; p.ce.C(3,:); pe_ce_on_p; p.ce.C(4,:)];
+c_ex_inv = sparse(diag(1./c_ex));
+dpedce = F3_pe * c_ex_inv * F3_pe_bcs;
+g_x(ind_phi_e,ind_ce) = dpedce;
+
+% F3_pe_sub = [F3_pe(:, 2:(Nn+1)), F3_pe(:, (Nn+3:Nn+3+(p.Nxs-2))), F3_pe(:, (end-Np):(end-1))];
+% 
+% g_x(ind_phi_e,ind_ce) = F3_pe_sub * diag(1./c_e);
 
 % g_x(ind_phi_e,ind_ce) = F3_pe(:,[2:Nn+1,Nn+3:Nn+p.Nxs+1,Nn+p.Nxs+3:end-1]) * diag(1./c_e);
 
@@ -195,8 +269,8 @@ di0dcen = p.k_n*sqrt(c_en.*c_ss_n.*(p.c_s_n_max - c_ss_n)) ./ (2*c_en);
 di0dcep = p.k_p*sqrt(c_ep.*c_ss_p.*(p.c_s_p_max - c_ss_p)) ./ (2*c_ep);
 
 % Equilibrium Potential
-[Unref,dUnref] = refPotentialAnode(p, c_ss_n / p.c_s_n_max);
-[Upref,dUpref] = refPotentialCathode(p, c_ss_p / p.c_s_p_max);
+[Unref,dUnref] = refPotentialAnode_NCM20Q(p, c_ss_n / p.c_s_n_max);
+[Upref,dUpref] = refPotentialCathode_NCM20Q(p, c_ss_p / p.c_s_p_max);
 
 % Overpotential
 eta_n = phi_s_n - phi_e(1:Nn) - Unref - p.Faraday*p.R_f_n*jn;
@@ -223,21 +297,30 @@ df6Jp = -2/p.Faraday*i_0p.*cosh(aFRT*eta_p) * aFRT*p.R_f_p*p.Faraday - 1;
 % Input into Jacobian
 
 % Loop through each "comb tooth" in anode
-Cell_df6n = cell(Nn,1);
-Cell_df6p = cell(Np,1);
-for idx = 1:Nn
-    Cell_df6n{idx} = df6dcssn(idx) * p.C_csn(1,:);
-end
-for idx = 1:Np
-    Cell_df6p{idx} = df6dcssp(idx) * p.C_csp(1,:);
-end
+%%%  SCOTT, YOU CAN RE-WRITE THIS TO AVOID LOOPS AND BLKDIAGFAST!!!
+% Cell_df6n = cell(Nn,1);
+% Cell_df6p = cell(Np,1);
+% for idx = 1:Nn
+%     Cell_df6n{idx} = df6dcssn(idx) * p.C_csn(1,:);
+% end
+% for idx = 1:Np
+%     Cell_df6p{idx} = df6dcssp(idx) * p.C_csp(1,:);
+% end
+% 
+% rsn = ones(Nn,1);
+% rsp = ones(Np,1);
+% csn = p.PadeOrder * ones(1,Nn);
+% csp = p.PadeOrder * ones(1,Np);
+% g_x(ind_jn,ind_csn) = blkdiagFast(rsn, csn, Cell_df6n{:});
+% g_x(ind_jp,ind_csp) = blkdiagFast(rsp, csp, Cell_df6p{:});
 
-rsn = ones(Nn,1);
-rsp = ones(Np,1);
-csn = p.PadeOrder * ones(1,Nn);
-csp = p.PadeOrder * ones(1,Np);
-g_x(ind_jn,ind_csn) = blkdiagFast(rsn, csn, Cell_df6n{:});
-g_x(ind_jp,ind_csp) = blkdiagFast(rsp, csp, Cell_df6p{:});
+df6dcssn_diag = sparse(diag(df6dcssn));
+df6dcssp_diag = sparse(diag(df6dcssp));
+
+g_x(ind_jn,ind_csn) = df6dcssn_diag * g_x(ind_jn,ind_csn);
+g_x(ind_jp,ind_csp) = df6dcssp_diag * g_x(ind_jp,ind_csp);
+
+
 
 g_x(ind_jn,ind_ce(1:Nn)) = diag(df6dcen);
 g_x(ind_jp,ind_ce(end-Np+1:end)) = diag(df6dcep);

@@ -11,11 +11,11 @@ Cur_nxt = Cur_vec(3);
 
 % Newton params
 maxIters = 100;
-tol = 1e-6;
+tol = 1e-5;
 
-% Sparse Linear System Solver Params
-linEqnTol = 1e-6; % Default is 1e-6
-linEqnMaxIter = 100;  % Default is 20
+% % Sparse Linear System Solver Params
+% linEqnTol = 1e-6; % Default is 1e-6
+% linEqnMaxIter = 100;  % Default is 20
 
 % tol_cs = 1e-4 * 1e-3 * 0.01;
 % tol_ce = 1e-3 * 0.01;
@@ -37,7 +37,7 @@ relres(1) = 1;
 %% Solve for consistent ICs at k
 if(Cur ~= Cur_prv)
     
-    %disp('Solving for consistent ICs');
+    disp('Solving for consistent ICs');
     
     % Preallocate
     z_cons = zeros(Nz,maxIters);
@@ -46,11 +46,11 @@ if(Cur ~= Cur_prv)
     for idx = 1:(maxIters-1)
         
         % DAE eqns for current time-step
-        [trash_var,g] = dae_dfn_federico_scott(x,z_cons(:,idx),Cur,p);
+        [~,g] = dae_dfn_federico_scott(x,z_cons(:,idx),Cur,p);
         
         % Jacobian of DAE eqns
-        [trash_var,trash_var,trash_var,g_z] = jac_dfn_federico(x,z_cons(:,idx),Cur,p.f_x,p.f_z,p.g_x,p.g_z,p);
-        
+        [~,~,~,g_z] = jac_dfn_federico(x,z_cons(:,idx),Cur,p.f_x,p.f_z,p.g_x,p.g_z,p);
+
         % Newton Iteration
         Delta_z = -(g_z\g);
 %         [LL,UU] = ilu(g_z,struct('type','ilutp','droptol',1e-6,'udiag',1));
@@ -62,7 +62,7 @@ if(Cur ~= Cur_prv)
         if(relres_z < tol)
             break;
         elseif(idx == (maxIters-1))
-            %fprintf(1,'Warning: Max Newton Iters Reached | RelChange = %3.2f%%\n',relres_z*100);
+            fprintf(1,'Warning: Max Newton Iters Reached | RelChange = %3.2f%%\n',relres_z*100);
         end
         
     end
@@ -115,13 +115,13 @@ for idx = 1:(maxIters-1)
     J = [F1_x, F1_z; F2_x, F2_z];
     
     % Check Jacobian against numjac
-%     Janalytic = [p.f_x, p.f_z; g_x, g_z];
+%     Janalytic = [f_x, f_z; g_x, g_z];
 %     
 %     y = [x_nxt(:,idx); z_nxt(:,idx)];
-%     FTY = dae_dfn_numjac(0,y,p);
+%     FTY = dae_dfn_numjac(0,y,Cur_nxt,p);
 %     thresh = eps * ones(length(y),1);
 %     
-%     [Jnum,FAC] = numjac(@(t,y) dae_dfn_numjac(t,y,p), 0, y, FTY, thresh, FAC, 0);
+%     [Jnum,FAC] = numjac(@(t,y) dae_dfn_numjac(t,y,Cur_nxt,p), 0, y, FTY, thresh, FAC, 0);
 %     
 %     Jerr = abs(Janalytic - Jnum);
 % 
@@ -179,7 +179,7 @@ for idx = 1:(maxIters-1)
     if( (relres(idx+1) < tol) && (norm(F,inf) < tol) )
         break;
     elseif(idx == (maxIters-1))
-        %fprintf(1,'Warning: Max Newton Iters Reached | RelChange = %1.4e%%\n',relres(end)*100);
+        fprintf(1,'Warning: Max Newton Iters Reached | RelChange = %1.4e%%\n',relres(end)*100);
     end
     
 end
@@ -190,7 +190,6 @@ z_nxtf = z_nxt(:,idx+1);
 
 newtonStats.iters = idx;
 newtonStats.relres = relres;
-newtonStats.condJac = condest(J);
-newtonStats.J = J;
+% newtonStats.condJac = condest(J);
 varargout{1} = newtonStats;
 

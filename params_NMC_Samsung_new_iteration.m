@@ -208,6 +208,9 @@ p.D_s_p = 6.6027e-12;%1.0000e-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for s
 % Diffusion coefficient in electrolyte
 p.D_e = 2.0864e-10;%1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
  
+% Diffusional conductivity in electrolyte
+p.dactivity = 0;
+
 p.brug = 1.5; %1.452;       % Bruggeman porosity
 p.D_e_n = p.D_e * p.epsilon_e_n^p.brug; % Effective diffusion coef. in neg. electrode, [m^2/s]
 p.D_e_s = p.D_e * p.epsilon_e_s^p.brug; % Effective diffusion coef. in neg. electrode, [m^2/s]
@@ -216,7 +219,7 @@ p.D_e_p = p.D_e * p.epsilon_e_p^p.brug; % Effective diffusion coef. in neg. elec
 % Conductivity of solid
 p.sig_n = 1.00E+02; %100;    % Conductivity of solid in neg. electrode, [1/Ohms*m]
 p.sig_p = 1.00E+01; %100;    % Conductivity of solid in pos. electrode, [1/Ohms*m]
- 
+
 p.sig_eff_n = p.sig_n * p.epsilon_s_n;    % Eff. conductivity in neg. electrode, [1/Ohms*m]
 p.sig_eff_p = p.sig_p * p.epsilon_s_p;    % Eff. conductivity in pos. electrode, [1/Ohms*m]
  
@@ -270,7 +273,7 @@ p.n_Li_s = 0.1391;%<-- This is calculated based on Samsung cell voltage limits a
 p.c_e = 1e3;              % Fixed electrolyte concentration for SPM, [mol/m^3]
  
 %% Cutoff voltages
-p.volt_max = 5;%3.8;
+p.volt_max = 4.2;%3.8;
 p.volt_min = 2.0;%1.8;
  
 %% Discretization parameters

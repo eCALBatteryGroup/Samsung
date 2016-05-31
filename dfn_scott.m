@@ -1,23 +1,16 @@
 %% Doyle-Fuller-Newman Model
 %   Created May 22, 2012 by Scott Moura
-%clc;
-%clear;
+clc;
+clear;
 tic;
 
 %% Model Construction
 % Electrochemical Model Parameters
 % run params_bosch
-% run params_dualfoil
-% run params_FePO4_ACC15
-
-run params_NMC_Samsung_new
-
-load('data/Int_Obs/UDDS_data_Oct_26_2015');
+% run params_dualfoil_Saehong
+run params_NMC_Samsung_new_iteration
 
 %% JUST ADDED FROM params_bosch
-% p.R_f_n = 1.0000e-05;
-% p.R_f_p = 5.0000e-05;
-% p.n_Li_s = 2.5975;
 
 % Vector lengths
 Ncsn = p.PadeOrder * (p.Nxn-1);
@@ -25,32 +18,30 @@ Ncsp = p.PadeOrder * (p.Nxp-1);
 Nce = p.Nx - 3;
 Nc = Ncsn+Ncsp+Nce;
 Nn = p.Nxn - 1;
+Ns = p.Nxs - 1;
 Np = p.Nxp - 1;
 Nnp = Nn+Np;
 Nx = p.Nx - 3;
 Nz = 3*Nnp + Nx;
 
-% % For LiCo02, with voltage lim [2.5, 4.05], n_Li_s = 2.50, the capacity is
-% % 29.601016543579075 Ah/m^2
+% Calculate C-rate in terms of [A/m^2] using low/high voltage cutoffs
+[cn_low,cp_low] = init_cs(p,p.volt_min);
+[cn_high,cp_high] = init_cs(p,p.volt_max);
+Delta_cn = cn_high-cn_low;
+Delta_cp = cp_low-cp_high;
+OneC = min(p.epsilon_s_n*p.L_n*Delta_cn*p.Faraday/3600, p.epsilon_s_p*p.L_p*Delta_cp*p.Faraday/3600);
+
 % OneC = 29.601016543579075; %[Ah/m^2]
 
-% For LiFePO4, with voltage lim [2.0, 3.60], n_Li_s = 0.100687787424000, the capacity is
-% 2.590706610839782 Ah/m^2
-OneC = 2.08;%<-- This is Ah for Samsug cell, NOT Ah/m^2, %2.590706610839782; %[Ah/m^2]
-
 %% Constant Current Data %%
-p.delta_t = 1;
-%t = 0:p.delta_t:(72);
-%t = 0:p.delta_t:1800;
-%%I(mod(t,20) < 10) = 350; %350, 10C Discharge for LiFePO4 Cell @ 35Ah/m^2 for 1C
-
-%I(mod(t,20) < 10) = -3*67; %-201, 3C Charge for LiCoO2 Cell 67Ah/m^2 for 1C (etas)
-% I(mod(t,20) < 10) = 7*67; %7C Discharge for LiCoO2 Cell 67Ah/m^2 for 1C (ce)
-%I = 1*OneC*ones(size(t));
+% p.delta_t = 1;
+% t = 0:p.delta_t:(240);
+% I = 1*OneC*ones(size(t));
 
 %%%%%%%%%%%%%%%%% FOR INPUT CYCLE FROM DFN MODEL %%%%%%%%%%%%%%%%
 % % datafile='data/june292014UDDS.mat';
-% datafile='data/UDDSx2_dfn.mat';
+% % datafile='data/UDDSx2_dfn.mat';
+% datafile='data/SC04x4_dfn.mat';
 % load(datafile);
 % 
 % t_long = out.time';
@@ -59,8 +50,16 @@ p.delta_t = 1;
 % 
 % % Current | Positive <=> Discharge, Negative <=> Charge
 % I_long = out.cur';
-% I = interp1(t_long,I_long,t,'linear*');
+% I_tmp = interp1(t_long,I_long,t,'spline*');
+% I = I_tmp * 0.7577 / trapz(t,I_tmp/OneC/3600)/1.5;
 % % I(t <=0) = 0;
+
+%%%%%%%%%%%%%%% FROM SAMSUNG Experiments %%%%%%%%%%%%%%%
+load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
+
+I = -current_exp'/p.Area;
+t = time_exp';
+p.delta_t = t(2)-t(1);
 
 %%%%%%%%% Commented by Federico %%%%%%%%%%%
 
@@ -80,23 +79,13 @@ p.delta_t = 1;
 % %  Ah_amp = trapz(tdata,I)/3600;
 % %  I = Iamp * (0.4*35)/Ah_amp;
 % % %  I = I*4;
-
-%%% Interval Observer Input %%%
-
-%load('data/Int_Obs/UDDSx2_batt_ObsData');
-% I = 3*1*I';
-% t = t';
-
-I = -current_exp'/p.Area;
-t = time_exp';
-
 %%%%%%%%% Uncommented by Federico %%%%%%%%%%%
 
 NT = length(t);
 
 %% Initial Conditions & Preallocation
 % Solid concentration
-V0 = 3.9322;
+V0 = 3.932250528000001; % For Samsung UDDS; 
 [csn0,csp0] = init_cs(p,V0);
 
 c_s_n0 = zeros(p.PadeOrder,1);
@@ -129,8 +118,8 @@ T = zeros(NT,1);
 T(1) = p.T_amp;
 
 % Solid Potential
-Uref_n0 = refPotentialAnode(p, csn0(1)*ones(Nn,1) / p.c_s_n_max);
-Uref_p0 = refPotentialCathode(p, csp0(1)*ones(Np,1) / p.c_s_p_max);
+Uref_n0 = refPotentialAnode_NCM20Q(p, csn0(1)*ones(Nn,1) / p.c_s_n_max);
+Uref_p0 = refPotentialCathode_NCM20Q(p, csp0(1)*ones(Np,1) / p.c_s_p_max);
 
 phi_s_n = zeros(Nn,NT);
 phi_s_p = zeros(Np,NT);
@@ -142,7 +131,7 @@ i_en = zeros(Nn,NT);
 i_ep = zeros(Np,NT);
 
 % Electrolyte Potential
-phi_e = zeros(Nx,NT);
+phi_e = zeros(Nx+2,NT);
 
 % Molar Ionic Flux
 jn = zeros(Nn,NT);
@@ -160,27 +149,35 @@ c_avg_p = zeros(Np,NT);
 c_avg_n(:,1) = repmat(csn0, [Nn 1]);
 c_avg_p(:,1) = repmat(csp0, [Np 1]);
 
+% SOC (Bulk Anode SOC)
 SOC = zeros(NT,1);
-SOC(1) = mean(c_avg_n(:,1)) / p.c_s_n_max;
+SOC(1) = (mean(c_avg_n(:,1)) - cn_low) / (cn_high - cn_low);
 
 % Overpotential
 eta_n = zeros(Nn,NT);
 eta_p = zeros(Np,NT);
 
 % Constraint Outputs
+c_e_0n = zeros(NT,1);
+c_e_0n(1) = c_ex(1,1);
+
 c_e_0p = zeros(NT,1);
-c_e_0p(1) = c_ex(1,1);
+c_e_0p(1) = c_ex(end,1);
 
 eta_s_Ln = zeros(NT,1);
 eta_s_Ln(1) = phi_s_p(1,1) - phi_e(1,1);
 
 % Voltage
 Volt = zeros(NT,1);
-Volt(1) = phi_s_p(end,1) - phi_s_n(1,1);
+Volt(1) = phi_s_p(end,1) - phi_s_n(1,1) - p.R_c*I(1);
 
 % Conservation of Li-ion matter
 n_Li_s = zeros(NT,1);
 n_Li_e = zeros(NT,1);
+
+n_Li_e(1) = sum(c_e(1:Nn,1)) * p.L_n*p.delta_x_n * p.epsilon_e_n * p.Area ...
+     + sum(c_e(Nn+1:end-Np,1)) * p.L_s*p.delta_x_s * p.epsilon_e_s * p.Area ...
+     + sum(c_e(end-Np+1:end,1)) * p.L_p*p.delta_x_p * p.epsilon_e_p * p.Area;
 
 % Stats
 newtonStats.iters = zeros(NT,1);
@@ -240,7 +237,7 @@ clear M1n M2n M3n M4n M5n M1s M2s M3s M4s M1p M2p M3p M4p M5p C_ce;
 
 % Solid Potential
 [F1_psn,F1_psp,F2_psn,F2_psp,G_psn,G_psp,...
-    C_psn,C_psp,D_psn,D_psp] = phi_s_mats(p);
+    C_psn,C_psp,D_psn,D_psp] = phi_s_mats_new(p);
 p.F1_psn = F1_psn;
 p.F1_psp = F1_psp;
 p.F2_psn = F2_psn;
@@ -264,6 +261,20 @@ p.F3_ien = F3_ien;
 p.F3_iep = F3_iep;
 
 clear F1_ien F1_iep F2_ien F2_iep F3_ien F3_iep;
+
+% Electrolyte Potential
+p.M1_pen_skel = sparse(diag(ones(p.Nxn-2,1),1) + diag(-ones(p.Nxn-2,1),-1));
+p.M1_pes_skel = sparse(diag(ones(p.Nxs-2,1),1) + diag(-ones(p.Nxs-2,1),-1));
+p.M1_pep_skel = sparse(diag(ones(p.Nxp-2,1),1) + diag(-ones(p.Nxp-2,1),-1));
+
+[M1_pe,M2_pe,M3_pe,M4_pe,C_pe] = phi_e_mats_new2(p);
+p.M1_pe = M1_pe;
+p.M2_pe = M2_pe;
+p.M3_pe = M3_pe;
+p.M4_pe = M4_pe;
+p.C_pe = C_pe;
+
+clear M1_pe M2_pe M3_pe M4_pe C_pe
 
 % Jacobian
 [f_x, f_z, g_x, g_z] = jac_dfn_pre(p);
@@ -293,13 +304,21 @@ for k = 1:(NT-1)
     c_s_p(:,k+1) = x(Ncsn+1:Ncsn+Ncsp, k+1);
     c_e(:,k+1) = x(Ncsn+Ncsp+1:Nc, k+1);
     T(k+1) = x(end, k+1);
+    
     phi_s_n(:,k+1) = z(1:Nn, k+1);
     phi_s_p(:,k+1) = z(Nn+1:Nnp, k+1);
     i_en(:,k+1) = z(Nnp+1:Nnp+Nn, k+1);
     i_ep(:,k+1) = z(Nnp+Nn+1:2*Nnp, k+1);
-    phi_e(:,k+1) = z(2*Nnp+1:2*Nnp+Nx, k+1);
-    jn(:,k+1) = z(2*Nnp+Nx+1:2*Nnp+Nx+Nn, k+1);
-    jp(:,k+1) = z(2*Nnp+Nx+Nn+1:end, k+1);
+    phi_e(:,k+1) = z(2*Nnp+1:2*Nnp+Nx+2, k+1);
+    jn(:,k+1) = z(2*Nnp+Nx+3:2*Nnp+Nx+Nn+2, k+1);
+    jp(:,k+1) = z(2*Nnp+Nx+Nn+3:end, k+1);
+    
+%     figure(1); clf;
+%     subplot(2,1,1);
+%     plot(phi_e(:,k+1));
+%     subplot(2,1,2);
+%     plot(jn(:,k+1));
+%     pause;
     
 %     i_en(:,k+1)
 %     i_ep(:,k+1)
@@ -314,23 +333,46 @@ for k = 1:(NT-1)
     
     newtonStats.iters(k+1) = stats.iters;
     newtonStats.relres{k+1} = stats.relres;
-    newtonStats.condJac(k+1) = stats.condJac;
+%     newtonStats.condJac(k+1) = stats.condJac;
     
     % Output data
-    [trash_var, trash_var, y] = dae_dfn_federico_scott(x(:,k+1),z(:,k+1),I(k+1),p);
+    [~, ~, y] = dae_dfn_federico_scott(x(:,k+1),z(:,k+1),I(k+1),p);
     
     c_ss_n(:,k+1) = y(1:Nn);
     c_ss_p(:,k+1) = y(Nn+1:Nnp);
     
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     % Check if theta is in range
+%     theta_n = c_ss_n(:,k+1)/p.c_s_n_max;
+%     theta_p = c_ss_p(:,k+1)/p.c_s_p_max;
+%     
+%     if(theta_n > 0.56)
+%         theta_n(theta_n > 0.56)
+%         beep;
+%         pause;
+%     end
+%     if(theta_p < 0.38)
+%         theta_p(theta_p < 0.38)
+%         beep;
+%         pause;
+%     elseif(theta_p > 0.85)
+%         theta_p(theta_p > 0.85)
+%         beep;
+%         pause;
+%     end
+%     
+%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
     c_avg_n(:,k+1) = y(Nnp+1:Nnp+Nn);
     c_avg_p(:,k+1) = y(Nnp+Nn+1 : 2*Nnp);
-    SOC(k+1) = mean(c_avg_n(:,k+1)) / p.c_s_n_max;
+    SOC(k+1) = (mean(c_avg_n(:,k+1)) - cn_low) / (cn_high - cn_low);
     
     c_ex(:,k+1) = y(2*Nnp+1:2*Nnp+Nx+4);
     
     eta_n(:,k+1) = y(2*Nnp+Nx+4+1 : 2*Nnp+Nx+4+Nn);
     eta_p(:,k+1) = y(2*Nnp+Nx+4+Nn+1 : 2*Nnp+Nx+4+Nn+Np);
     
+    c_e_0n(k+1) = y(end-5);
     c_e_0p(k+1) = y(end-4);
     eta_s_Ln(k+1) = y(end-3);
     
@@ -341,8 +383,8 @@ for k = 1:(NT-1)
     eta_s_n = phi_s_n - phi_e(1:Nn,:);
     eta_s_p = phi_s_p - phi_e(end-Np+1:end, :);
     
-%     fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.4fV\n',...
-%         t(k),I(k+1)/OneC,SOC(k+1),Volt(k+1));
+    fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.3fV | Iters : %2.0f\n',...
+        t(k),I(k+1)/OneC,SOC(k+1),Volt(k+1),stats.iters);
     
     if(Volt(k+1) < p.volt_min)
         fprintf(1,'Min Voltage of %1.1fV exceeded\n',p.volt_min);
@@ -379,7 +421,7 @@ fprintf(1,'Simulation Time : %3.2f min\n',simTime/60);
 % legend('V')
 % xlim([0 t(end)])
 % subplot(413)
-% plot(t,c_e_0p/1e3)
+% plot(t,c_e_0p/1e3,'b-',t,c_e_0n/1e3,'r--')
 % hold on
 % plot(t,0.15*ones(size(t)),'k--')
 % legend('ce0p')
@@ -401,40 +443,13 @@ out.volt=Volt;
 out.soc=SOC;
 out.c_ss_n=c_ss_n;
 out.c_ss_p=c_ss_p;
-out.eta_s_Ln=eta_s_Ln;
+out.temp = T;
+% out.eta_s_Ln=eta_s_Ln;
+out.ce0n=c_e_0n;
 out.ce0p=c_e_0p;
 out.simtime=simTime;
 
-%save('data/new/dfn_etas_new.mat', '-struct', 'out'); %3C Charge LiCoO2
+% save('data/Int_Obs/dfn_UDDS_NCM20Q.mat', '-struct', 'out');
 % save('data/new/dfn_ce_new.mat', '-struct', 'out'); %10C Discharge LiCoO2
-
-
-
-
-%% Load experimental data and check
-
-% figure(1)
-% plot(t,Volt,'linewidth',2)
-% hold on
-% grid on
-% plot(t,volt_exp,'r','linewidth',2)
-% legend('DFN Model Data','Experimental Data')
-% xlabel('Time [s]')
-% ylabel('Voltage [V]')
-% ylim([3.2 4.1])
-% 
-% 
-% figure(2)
-% plot(t,Volt-volt_exp,'linewidth',2)
-% hold on
-% grid on
-% %plot(t,volt_exp,'r','linewidth',2)
-% %legend('DFN Model Data','Experimental Data')
-% xlabel('Time [s]')
-% ylabel('Voltage [V]')
-% ylim([-0.05 0.15])
-
-
-
 
 
