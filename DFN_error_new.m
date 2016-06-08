@@ -34,15 +34,27 @@ disp('=================Parameters=================')
 % p.R_s_n = x(4);%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
 % p.R_s_p = x(5)%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
 
+% p.R_s_n = x(1);%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
+% p.R_s_p = x(2);%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
+p.R_f_n = x(1);
+p.R_f_p = x(2);
+p.R_c = x(3);
+p.D_s_n = x(4);
+p.D_s_p = x(5);
+p.D_e = x(6)
+% p.k_n = x(8);
+% p.k_p = x(9)
 
 
-p.D_e = x(1);%1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
 
-p.t_plus = x(2);%0.38; %0.2495;    % Transference number
 
-p.epsilon_f_n = x(3);%0;%Filler
-
-p.epsilon_f_p = x(4)%0;%Filler
+% p.D_e = x(1);%1.50E-10; %6.911e-10;    % Diffusion coeff for electrolyte, [m^2/s]
+% 
+% p.t_plus = x(2);%0.38; %0.2495;    % Transference number
+% 
+% p.epsilon_f_n = x(3);%0;%Filler
+% 
+% p.epsilon_f_p = x(4)%0;%Filler
 
 %disp('=================Check=================')
 % 
@@ -63,13 +75,13 @@ p.epsilon_f_p = x(4)%0;%Filler
 % end
 
 try
-    run dfn_scott_testing_Satadru
+    run dfn_scott_PSO_June_2016 %dfn_scott_testing_Satadru
 catch
     %load('data/Int_Obs/IC_Pulse')
     %load('data/Int_Obs/Cby2Pulse')
     %load('data/Int_Obs/Samsung_HEV_data')
     
-    load('data/Int_Obs/dfn_5c')
+    load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec')
 
 disp('===Catch===')
    %load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
@@ -84,7 +96,7 @@ end
 %load('data/Int_Obs/Cby2Pulse')
 %load('data/Int_Obs/Samsung_HEV_data')
 
-load('data/Int_Obs/dfn_5c')
+load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec')
 
 
 

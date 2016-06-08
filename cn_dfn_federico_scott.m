@@ -37,7 +37,7 @@ relres(1) = 1;
 %% Solve for consistent ICs at k
 if(Cur ~= Cur_prv)
     
-    disp('Solving for consistent ICs');
+    %disp('Solving for consistent ICs');
     
     % Preallocate
     z_cons = zeros(Nz,maxIters);
