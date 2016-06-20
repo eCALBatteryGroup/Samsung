@@ -40,8 +40,8 @@ p.a_s_p = 3*p.epsilon_s_p/p.R_s_p;  % Positive electrode [m^2/m^3]
  
 %% Transport Params
 % Diffusion coefficient in solid
-p.D_s_n = 3.4610e-13;%8.9931e-14;%9.9945e-13;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
-p.D_s_p = 6.5631e-13;%9.9748e-14;%1.0000e-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
+p.D_s_n0 = 3.4610e-13;%8.9931e-14;%9.9945e-13;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
+p.D_s_p0 = 6.5631e-13;%9.9748e-14;%1.0000e-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
 %p.D_s_n = 1.40E-14;%1.40E-14; %1.736e-14;  % Diffusion coeff for solid in neg. electrode, [m^2/s]
 %p.D_s_p = 2.00E-14;%2.00E-14; %8.256e-14;  % Diffusion coeff for solid in pos. electrode, [m^2/s]
  
@@ -80,8 +80,8 @@ p.R_f_p = 1e-3; %0;          % Resistivity of SEI layer, [Ohms*m^2]
 p.R_c = 7.6659e-6;%1.0000e-05;
   
 % Reaction rates
-p.k_n = 1e-4; % Reaction rate in neg. electrode, [(A/cm^2)*(mol^3/mol)^(1+alpha)]
-p.k_p = 1.2e-7; % Reaction rate in pos. electrode, [(A/cm^2)*(mol^3/mol)^(1+alpha)]
+p.k_n0 = 1e-4; % Reaction rate in neg. electrode, [(A/cm^2)*(mol^3/mol)^(1+alpha)]
+p.k_p0 = 1.2e-7; % Reaction rate in pos. electrode, [(A/cm^2)*(mol^3/mol)^(1+alpha)]
 %  
 %% Thermodynamic Params
 % Equilibrium potentials (ws/Uref_LiFEPO4.mat)
@@ -92,17 +92,29 @@ p.Unref = Unref;
 p.Upref = Upref;
  
 % Thermal dynamics
-p.C_p = 2000*0.2;%75;   % Heat capacity, [J/K]
-p.h = 1;%12.4;   % Heat transfer coefficient, [W/K]
+p.C_p = 2.8e4;% from NMC fit 2000*0.2;%75;   % Heat capacity, [J/K]
+p.h = 1150;% from NMC fit, 1;%12.4;   % Heat transfer coefficient, [W/K]
  
 % Ambient Temperature
-p.T_amp = 278.15; % [K]
+p.T_amp = 298.15; % [K]
  
 % Entropy coefficients
-p.dUref_dT = -0.4e-3; % [V/K] approx. from Al Hallaj et al 2000, JPS
+p.dUref_dT = 0;%-0.4e-3; % [V/K] approx. from Al Hallaj et al 2000, JPS
  
 % Lumped density [kg/m^2]
-p.rho_avg = 0.7934;
+p.rho_avg = 1.0465;%with 20Q As = 0.0043 m2 and m_cell = 0.0045 kg, %0.7934;
+
+% Reference temperature
+p.T_ref = 298.15; %[K]
+
+% Activation Energies
+% To be updated
+p.E.kn = 0;%37.48e3;
+p.E.kp = 0;%39.57e3;
+p.E.Dsn = 0;%42.77e3;
+p.E.Dsp = 0;%18.55e3;
+p.E.De = 0;%37.04e3;
+p.E.kappa_e = 0;%34.70e3;
  
 %% Concentrations
 % Maxima

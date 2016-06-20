@@ -35,7 +35,7 @@ addpath(genpath('functions'))
 options = pso;
 options.PopulationSize	= 12;%24;
 options.Vectorized		= 'off';
-options.BoundaryMethod	= 'nearest'; %'penalize'
+options.BoundaryMethod	= 'penalize';
 options.PlotFcns		= @psoplotbestf;
 options.Display			= 'iter';
 options.HybridFcn		= @fmincon;
@@ -51,11 +51,11 @@ problem.bineq		= [];
 %%%problem.lb			= [5E-04 1E-14 1E-14];% 1.00E-04];% 0.1600];
 %%%problem.ub			= [20E-03  1E-12 1E-12];% 10.00E-04];% 0.1700];
 
-problem.lb			      = [0 0 1.0e-06 1e-14 1e-14 3e-10];% 1e-7 1e-7];    % Upper bound changed by HEP
-problem.ub			      = [5.00E-03 5.00E-03 3.0e-05 1e-12 1e-12 7e-10];% 3e-7 3e-7];    % Lower bound changed by HEP
+problem.lb			      = [0.30 0.00 0.00 1e-12 1e-8 1e-8];% 1e-7 1e-7];    % Lower bound changed by HEP
+problem.ub			      = [0.45 0.15 0.15  1e-7 1e-4 1e-4];% 3e-7 3e-7];    % Upper bound changed by HEP
 
 %options.PopInitBest		  = [7.00E-04 1.40E-14 2E-14];      % Initial Personal Best (After Initial Run)
-options.PopInitBest		  = [1e-03 5e-03 1e-05 8.9931e-14 9.9748e-14 5e-10];% 1e-7 3e-7];      % Initial Personal Best (After Initial Run)
+options.PopInitBest		  = [0.3662 0.02 0.01 1e-10 1e-6 1e-7];% 1e-7 3e-7];      % Initial Personal Best (After Initial Run)
 
 
 bounds.range        = problem.ub-problem.lb;                       % Range 

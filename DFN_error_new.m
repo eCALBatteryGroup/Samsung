@@ -36,12 +36,14 @@ disp('=================Parameters=================')
 
 % p.R_s_n = x(1);%5.00E-7;%5.00E-06; %3.596e-6;   % Radius of solid particles in negative electrode [m]
 % p.R_s_p = x(2);%5.00E-7; %1.637e-7;   % Radius of solid particles in positive electrode [m]
-p.R_f_n = x(1);
-p.R_f_p = x(2);
-p.R_c = x(3);
-p.D_s_n = x(4);
-p.D_s_p = x(5);
-p.D_e = x(6)
+
+p.t_plus = x(1);
+p.epsilon_f_n = x(2);
+p.epsilon_f_p = x(3);
+p.D_e = x(4);
+p.k_n = x(5);
+p.k_p = x(6)
+
 % p.k_n = x(8);
 % p.k_p = x(9)
 
@@ -81,7 +83,7 @@ catch
     %load('data/Int_Obs/Cby2Pulse')
     %load('data/Int_Obs/Samsung_HEV_data')
     
-    load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec')
+    load('data/Int_Obs/dfn_5c')
 
 disp('===Catch===')
    %load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
@@ -96,7 +98,7 @@ end
 %load('data/Int_Obs/Cby2Pulse')
 %load('data/Int_Obs/Samsung_HEV_data')
 
-load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec')
+load('data/Int_Obs/dfn_5c')
 
 
 

@@ -1,17 +1,76 @@
-%% Doyle-Fuller-Newman Model
-%   Created May 22, 2012 by Scott Moura
-%clc;
-%clear;
+%% Doyle-Fuller-Newman Model with Reference Governor
+%   Published June 17, 2016 by Professor Scott Moura
+%   Energy, Controls, and Applications Lab (eCAL)
+%   University of California, Berkeley
+%   http://ecal.berkeley.edu/
+clc;
+clear;
 tic;
 
-%% Model Construction
-% Electrochemical Model Parameters
-% run params_bosch
-% run params_dualfoil_Saehong
+disp('Fast DFN')
+disp('%%%%%%%%')
 
-run params_NMC_Samsung_new_iteration_June_2016 %params_NMC_Samsung_new_iteration
+%% Electrochemical Model Parameters
+% Load NMC Params \\Lithium Cobolt Oxide Params, adopted from DUALFOIL
+run params_NMC_Samsung_new_iteration_June_2016_RG %param/params_LCO
 
-%% JUST ADDED FROM params_bosch
+%% Reference Governor Constraint Parameters
+p.rg.theta_min_n = 0.01;     % Min anode stochiometry
+p.rg.theta_max_n = 0.57;      % Max anode stochiometry
+p.rg.theta_min_p = 0.38;      % Min cathode stociometry
+p.rg.theta_max_p = 0.85;     % Max cathode stochiometry
+
+p.rg.c_e_min = 50;          % Min electrolyte concentration  [mol/m?3]
+p.rg.c_e_max = 3000;        % Max electrolyte concentration  [mol/m?3]
+
+p.rg.T_min = 273.15-10;            % Min temperature [K]
+p.rg.T_max = 273.15+60;            % Max temperature [K]
+
+% p.rg.Volt_min = 2.8;         % Min voltage
+% p.rg.Volt_max = 3.9;         % Max voltage
+
+
+%% Input charge/discharge Current Data %%
+% % Current | Positive <=> Discharge, Negative <=> Charge
+
+% Calculate C-rate in terms of [A/m^2] using low/high voltage cutoffs
+[cn_low,cp_low] = init_cs(p,p.volt_min);
+[cn_high,cp_high] = init_cs(p,p.volt_max);
+Delta_cn = cn_high-cn_low;
+Delta_cp = cp_low-cp_high;
+OneC = min(p.epsilon_s_n*p.L_n*Delta_cn*p.Faraday/3600, p.epsilon_s_p*p.L_p*Delta_cp*p.Faraday/3600);
+OneC = 2.08; % From Samsung 20Q nominal capacity
+
+%%%%%%%%%%%%%%% CONSTANT C-RATE %%%%%%%%%%%%%%%%%%%%%%%%%
+p.delta_t = 1;
+t = 0:p.delta_t:(120);
+Ir = OneC*ones(size(t))/p.Area;
+
+%%%%%%%%%%%%%%% DYNAMIC CHARGE/DISCHARGE CYCLES FROM EXPERIMENTS %%%%%%%%%%%%%%%
+% load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');
+% 
+% Ir = -current_exp'/p.Area;
+% t = time_exp';
+% p.delta_t = t(2)-t(1);
+
+NT = length(t);
+beta = ones(NT,1);
+
+%% Initial Conditions & Preallocation
+% Solid concentration
+V0 = 3.9;
+[csn0,csp0] = init_cs(p,V0);
+
+% Electrolyte concentration
+ce0 = p.c_e;
+
+% Temperature
+T0 = p.T_amp;
+
+% Reference Govorner Current
+I = zeros(NT,1);
+beta = ones(NT,1);
+
 
 % Vector lengths
 Ncsn = p.PadeOrder * (p.Nxn-1);
@@ -25,83 +84,19 @@ Nnp = Nn+Np;
 Nx = p.Nx - 3;
 Nz = 3*Nnp + Nx;
 
-% Calculate C-rate in terms of [A/m^2] using low/high voltage cutoffs
-[cn_low,cp_low] = init_cs(p,p.volt_min);
-[cn_high,cp_high] = init_cs(p,p.volt_max);
-Delta_cn = cn_high-cn_low;
-Delta_cp = cp_low-cp_high;
-OneC = min(p.epsilon_s_n*p.L_n*Delta_cn*p.Faraday/3600, p.epsilon_s_p*p.L_p*Delta_cp*p.Faraday/3600);
-
-% OneC = 29.601016543579075; %[Ah/m^2]
-
-%% Constant Current Data %%
-% p.delta_t = 1;
-% t = 0:p.delta_t:(240);
-% I = 1*OneC*ones(size(t));
-
-%%%%%%%%%%%%%%%%% FOR INPUT CYCLE FROM DFN MODEL %%%%%%%%%%%%%%%%
-% % datafile='data/june292014UDDS.mat';
-% % datafile='data/UDDSx2_dfn.mat';
-% datafile='data/SC04x4_dfn.mat';
-% load(datafile);
-% 
-% t_long = out.time';
-% t = (t_long(1):1:t_long(end))';
-% NT = length(t);
-% 
-% % Current | Positive <=> Discharge, Negative <=> Charge
-% I_long = out.cur';
-% I_tmp = interp1(t_long,I_long,t,'spline*');
-% I = I_tmp * 0.7577 / trapz(t,I_tmp/OneC/3600)/1.5;
-% % I(t <=0) = 0;
-
-%%%%%%%%%%%%%%% FROM SAMSUNG Experiments %%%%%%%%%%%%%%%
-load('data/Int_Obs/udds5');
-%load('data/Int_Obs/Samsung_HEV_data');
-%load('data/Int_Obs/UDDS_data_Oct_26_2015_Sample_05sec');%load('data/Int_Obs/dfn_5c');%load('data/Int_Obs/Cby2Pulse');
-
-I = -current_exp'/p.Area;
-t = time_exp';
-p.delta_t = t(2)-t(1);
-
-%%%%%%%%% Commented by Federico %%%%%%%%%%%
-
-% Pulse Data
-% t = -2:p.delta_t:120;
-% I(t >= 0) = 0; 
-% I(mod(t,20) < 10) = 350;% 3C = 105   -10C = -350
-% Iamp = I;
-
-% Experimental Data
-%%%%%%%%%%% Uncommented by Federico %%%%%%%%%%%%%
-% %  load('data/UDDSx2_batt_ObsData.mat');
-% %  tdata = t;
-% %  Tfinal = tdata(end);
-% %  t = -2:p.delta_t:Tfinal;
-% %  Iamp = interp1(tdata,I,t,'spline',0);
-% %  Ah_amp = trapz(tdata,I)/3600;
-% %  I = Iamp * (0.4*35)/Ah_amp;
-% % %  I = I*4;
-%%%%%%%%% Uncommented by Federico %%%%%%%%%%%
-
-NT = length(t);
-
-%% Initial Conditions & Preallocation
-% Solid concentration
-V0 = 3.9341; %3.932250528000001;% 3.6659;% for 5C pulse  ||     3.932250528000001; % For Samsung UDDS; 
-[csn0,csp0] = init_cs(p,V0);
+% Output Discretization params
+disp('Discretization Params');
+fprintf(1,'No. of FDM nodes in Anode | Separator | Cathode : %1.0f | %1.0f | %1.0f\n',p.Nxn,p.Nxs,p.Nxp);
+fprintf(1,'Order of Pade Approx for Solid Concentration : %1.0f\n',p.PadeOrder);
+fprintf(1,'Time Step : %2.2f sec\n',p.delta_t);
+disp(' ');
 
 c_s_n0 = zeros(p.PadeOrder,1);
 c_s_p0 = zeros(p.PadeOrder,1);
 
-%%%%% Initial condition based on controllable canonical form
-% c_s_n0(1) = csn0 * (-p.R_s_n/3) * (p.R_s_n^4 / (3465 * p.D_s_n^2));
-% c_s_p0(1) = csp0 * (-p.R_s_p/3) * (p.R_s_p^4 / (3465 * p.D_s_p^2));
-
 %%%%% Initial condition based on Jordan form
 c_s_n0(3) = csn0;
 c_s_p0(3) = csp0;
-%%%%%
 
 c_s_n = zeros(Ncsn,NT);
 c_s_p = zeros(Ncsp,NT);
@@ -111,14 +106,14 @@ c_s_p(:,1) = repmat(c_s_p0, [Nn 1]);
 
 % Electrolyte concentration
 c_e = zeros(Nx,NT);
-c_e(:,1) = p.c_e * ones(Nx,1);
+c_e(:,1) = ce0 * ones(Nx,1);
 
 c_ex = zeros(Nx+4,NT);
 c_ex(:,1) = c_e(1,1) * ones(Nx+4,1);
 
 % Temperature
 T = zeros(NT,1);
-T(1) = p.T_amp;
+T(1) = T0;
 
 % Solid Potential
 Uref_n0 = refPotentialAnode_NCM20Q(p, csn0(1)*ones(Nn,1) / p.c_s_n_max);
@@ -172,7 +167,7 @@ eta_s_Ln(1) = phi_s_p(1,1) - phi_e(1,1);
 
 % Voltage
 Volt = zeros(NT,1);
-Volt(1) = phi_s_p(end,1) - phi_s_n(1,1) - p.R_c*I(1);
+Volt(1) = phi_s_p(end,1) - phi_s_n(1,1) - p.R_c*Ir(1);
 
 % Conservation of Li-ion matter
 n_Li_s = zeros(NT,1);
@@ -193,7 +188,7 @@ x0 = [c_s_n(:,1); c_s_p(:,1); c_e(:,1); T(1)];
 z0 = [phi_s_n(:,1); phi_s_p(:,1); i_en(:,1); i_ep(:,1);...
       phi_e(:,1); jn(:,1); jp(:,1)];
 
-%% Preallocate
+%% Preallocate states
 x = zeros(length(x0), NT);
 z = zeros(length(z0), NT);
 
@@ -202,7 +197,7 @@ z(:,1) = z0;
 
 %% Precompute data
 % Solid concentration matrices
-[A_csn,B_csn,A_csp,B_csp,C_csn,C_csp,A_csn_normalized, A_csp_normalized] = c_s_mats(p);
+[A_csn,B_csn,A_csp,B_csp,C_csn,C_csp,A_csn_normalized, A_csp_normalized] = c_s_mats_RG(p);
 p.A_csn = A_csn;
 p.A_csn_normalized= A_csn_normalized;
 p.B_csn = B_csn;
@@ -236,7 +231,11 @@ p.ce.M5p = M5p;
 
 p.ce.C = C_ce;
 
-clear M1n M2n M3n M4n M5n M1s M2s M3s M4s M1p M2p M3p M4p M5p C_ce;
+rM3 = [Nn; Ns; Np];
+cM3 = rM3';
+p.ce.M3 = sparse(blkdiagFast(rM3, cM3, p.ce.M3n, p.ce.M3s, p.ce.M3p));
+
+clear M1n M2n M3n M4n M5n M1s M2s M3s M4s M1p M2p M3p M4p M5p C_ce rM1 cM1;
 
 % Solid Potential
 [F1_psn,F1_psp,F2_psn,F2_psp,G_psn,G_psp,...
@@ -292,12 +291,38 @@ disp('Simulating DFN Model...');
 
 for k = 1:(NT-1)
     
+    % Adjust Temperature Dependent Parameters, based on present temperaure
+    p.k_n = p.k_n0 * exp(p.E.kn/p.R*(1/p.T_ref - 1/T(k)));
+    p.k_p = p.k_p0 * exp(p.E.kp/p.R*(1/p.T_ref - 1/T(k)));
+    
+    % Reference Governor
+    if(Ir(k) ~= 0)
+        beta(k) = bisection_dfn_NMC(p,x(:,k),z(:,k),I(k),Ir(k));
+    else
+        beta(k) = 1;
+    end
+    I(k+1) = beta(k) * Ir(k);
+    
     % Current
     if(k == 1)
         Cur_vec = [I(k), I(k), I(k+1)];
     else
         Cur_vec = [I(k-1), I(k), I(k+1)];
     end
+    
+    % Solid concentration matrices
+    p.D_s_n = p.D_s_n0 * exp(p.E.Dsn/p.R*(1/p.T_ref - 1/T(k)));
+    p.D_s_p = p.D_s_n0 * exp(p.E.Dsp/p.R*(1/p.T_ref - 1/T(k)));
+    
+    [A_csn,B_csn,A_csp,B_csp,C_csn,C_csp] = c_s_mats_RG(p);
+    p.A_csn = A_csn;
+    p.B_csn = B_csn;
+    p.A_csp = A_csp;
+    p.B_csp = B_csp;
+    p.C_csn = C_csn;
+    p.C_csp = C_csp;
+    
+    clear A_csn B_csn A_csp B_csp C_csn C_csp;
     
     % Step-forward in time
     [x(:,k+1), z(:,k+1), stats] = cn_dfn_federico_scott(x(:,k),z(:,k),Cur_vec,p);
@@ -316,24 +341,6 @@ for k = 1:(NT-1)
     jn(:,k+1) = z(2*Nnp+Nx+3:2*Nnp+Nx+Nn+2, k+1);
     jp(:,k+1) = z(2*Nnp+Nx+Nn+3:end, k+1);
     
-%     figure(1); clf;
-%     subplot(2,1,1);
-%     plot(phi_e(:,k+1));
-%     subplot(2,1,2);
-%     plot(jn(:,k+1));
-%     pause;
-    
-%     i_en(:,k+1)
-%     i_ep(:,k+1)
-%     
-%     phi_s_n(:,k+1)
-%     phi_s_p(:,k+1)
-%     
-%     phi_e(:,k+1)
-%     
-%     jn(:,k+1)
-%     jp(:,k+1)
-    
     newtonStats.iters(k+1) = stats.iters;
     newtonStats.relres{k+1} = stats.relres;
 %     newtonStats.condJac(k+1) = stats.condJac;
@@ -343,28 +350,6 @@ for k = 1:(NT-1)
     
     c_ss_n(:,k+1) = y(1:Nn);
     c_ss_p(:,k+1) = y(Nn+1:Nnp);
-    
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%     % Check if theta is in range
-%     theta_n = c_ss_n(:,k+1)/p.c_s_n_max;
-%     theta_p = c_ss_p(:,k+1)/p.c_s_p_max;
-%     
-%     if(theta_n > 0.56)
-%         theta_n(theta_n > 0.56)
-%         beep;
-%         pause;
-%     end
-%     if(theta_p < 0.38)
-%         theta_p(theta_p < 0.38)
-%         beep;
-%         pause;
-%     elseif(theta_p > 0.85)
-%         theta_p(theta_p > 0.85)
-%         beep;
-%         pause;
-%     end
-%     
-%     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     c_avg_n(:,k+1) = y(Nnp+1:Nnp+Nn);
     c_avg_p(:,k+1) = y(Nnp+Nn+1 : 2*Nnp);
@@ -386,17 +371,17 @@ for k = 1:(NT-1)
     eta_s_n = phi_s_n - phi_e(1:Nn,:);
     eta_s_p = phi_s_p - phi_e(end-Np+1:end, :);
     
-%     fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | SOC : %1.3f | Voltage : %2.3fV | Iters : %2.0f\n',...
-%         t(k),I(k+1)/OneC,SOC(k+1),Volt(k+1),stats.iters);
+    fprintf(1,'Time : %3.2f sec | C-rate : %2.2f | Temp : %2.1fdegC | SOC : %1.3f | Voltage : %2.3fV | Newton Iters : %2.0f\n',...
+        t(k),I(k+1)/OneC,T(k+1)-273.15,SOC(k+1),Volt(k+1),stats.iters);
     
     if(Volt(k+1) < p.volt_min)
         fprintf(1,'Min Voltage of %1.1fV exceeded\n',p.volt_min);
-        beep;
+%         beep;
         %break;
     elseif(Volt(k+1) > p.volt_max)
         fprintf(1,'Max Voltage of %1.1fV exceeded\n',p.volt_max);
-        beep;
-        break;
+%         beep;
+%         break;
     elseif(any(c_ex(:,k) < 1))
         fprintf(1,'c_e depleted below 1 mol/m^3\n');
         beep;
@@ -410,35 +395,12 @@ end
 disp('Simulating Output Vars...');
 simTime = toc;
 fprintf(1,'Simulation Time : %3.2f min\n',simTime/60);
-
-%% Plot Results
-
-% figure(1)
-% clf
-% subplot(411)
-% plot(t,I/OneC)
-% legend('Icrate')
-% xlim([0 t(end)])
-% subplot(412)
-% plot(t,Volt)
-% legend('V')
-% xlim([0 t(end)])
-% subplot(413)
-% plot(t,c_e_0p/1e3,'b-',t,c_e_0n/1e3,'r--')
-% hold on
-% plot(t,0.15*ones(size(t)),'k--')
-% legend('ce0p')
-% xlim([0 t(end)])
-% subplot(414)
-% plot(t,eta_s_Ln)
-% hold on
-% plot(t,0*ones(size(t)),'k--')
-% legend('eta')
-% ylim([-0.15 0.2])
-% xlim([0 t(end)])
+disp('To plots results, run...');
+disp(' plot_dfn')
+disp(' animate_dfn')
 
 
-%% Save Output Data for Plotting (HEP)
+%% Save Output Data for Plotting
 out.date=date;
 out.time=t;
 out.cur=I;
@@ -454,31 +416,5 @@ out.simtime=simTime;
 
 % save('data/Int_Obs/dfn_UDDS_NCM20Q.mat', '-struct', 'out');
 % save('data/new/dfn_ce_new.mat', '-struct', 'out'); %10C Discharge LiCoO2
-
-
-
-figure(1)
-plot(t,Volt,'linewidth',2)
-hold on
-grid on
-plot(t,volt_exp,'r','linewidth',2)
-legend('DFN Model Data','Experimental Data')
-xlabel('Time [s]')
-ylabel('Voltage [V]')
-%ylim([3.56 3.76])
-ylim([3.25 4.1])
-% 
-% 
-figure(2)
-plot(t,Volt-volt_exp,'r')
-hold on
-grid on
-title('Voltage Error')
-%plot(t,volt_exp,'r','linewidth',2)
-%legend('DFN Model Data','Experimental Data')
-xlabel('Time [s]')
-ylabel('Voltage [V]')
-
-rmse = rms(Volt-volt_exp)
 
 
